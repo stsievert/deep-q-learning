@@ -5,7 +5,7 @@ import torch
 
 def e_greedy_action(Q, phi, env, step):
     # Initial values
-    initial_epsilon, final_epsilon = 1.0, .1
+    initial_epsilon, final_epsilon = 1.0, 0.1
     # Decay steps
     decay_steps = float(1e6)
     # Calculate step size to move from final to initial epsilon with #decay_steps

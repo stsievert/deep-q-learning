@@ -44,21 +44,24 @@ def initial_history(env):
     for _ in range(H.length):
         H.add(s)
     return H
+
+
 # ----------------------------------
 
 
 # Play
-env = gym.make('Pong-v0')
+env = gym.make("Pong-v0")
 H = initial_history(env)
 Q = DeepQNetwork(6)
-Q.load_state_dict(torch.load('data/models/episode_360.txt',
-                             map_location=lambda storage, loc: storage))
+Q.load_state_dict(
+    torch.load("data/models/episode_360.txt", map_location=lambda storage, loc: storage)
+)
 
 # print(Q.state_dict())
 # raw_input()
 
-while(True):
-    env.render(mode='human')
+while True:
+    env.render(mode="human")
     phi = phi_map(H.get())
     action = greedy_action(Q, phi)
     # raw_input()

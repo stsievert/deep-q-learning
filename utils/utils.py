@@ -5,7 +5,7 @@ from torch.autograd import Variable
 
 
 def clear_terminal_output():
-    os.system('clear')
+    os.system("clear")
 
 
 def to_variable(arr):
