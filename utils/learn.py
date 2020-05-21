@@ -1,5 +1,6 @@
 import numpy as np
 from utils import to_variable
+import torch
 
 
 def e_greedy_action(Q, phi, env, step):
@@ -28,6 +29,7 @@ def e_greedy_action(Q, phi, env, step):
     else:
         # Otherwise select action that maximises Q(phi)
         # In other words: a_t = argmax_a Q(phi, a)
-        phi = to_variable(phi).float()
-        max_q = Q(phi).max(1)[1]
-        return max_q.data[0], epsilon
+        with torch.no_grad():
+            phi = to_variable(phi).float()
+            max_q = Q(phi).max(dim=0).values
+            return max_q.detach().numpy(), epsilon

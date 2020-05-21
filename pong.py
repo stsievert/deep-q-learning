@@ -1,4 +1,3 @@
-from time import perf_counter
 import gym
 from types import SimpleNamespace
 from torch import optim
@@ -21,6 +20,31 @@ def read_flags():
         "save_model_freq": 10
     }
     FLAGS = SimpleNamespace(**flags)
+    #  flags = tf.app.flags
+    #  flags.DEFINE_boolean(
+        #  'floyd', False, 'Use directory structure for deploying in FloydHub')
+    #  flags.DEFINE_string(
+        #  'data_dir', './data', 'Default output data directory')
+    #  flags.DEFINE_string(
+        #  'log_dir', None, 'Default tensorboard data directory')
+    #  flags.DEFINE_string(
+        #  'in_dir', './data', 'Default input data directory')
+    #  flags.DEFINE_integer(
+        #  'log_freq', 1, 'Step frequency for logging')
+    #  flags.DEFINE_boolean(
+        #  'log_console', True, 'Step frequency for logging')
+    #  flags.DEFINE_integer(
+        #  'save_model_freq', 10, 'Step frequency for logging')
+    #  FLAGS = flags.FLAGS
+
+    # Reformat directories if using FloydHub directory structure
+    if FLAGS.floyd:
+        FLAGS.data_dir = '/output'
+        FLAGS.log_dir = '/output'
+        FLAGS.in_dir = ''
+        FLAGS.log_freq = 500
+        FLAGS.log_console = False
+        FLAGS.save_model_freq = 100
     return FLAGS
 
 
@@ -29,8 +53,7 @@ def read_flags():
 FLAGS = read_flags()
 # ----------------------------------
 # Tranining
-#  env = gym.make('Pong-v0')
-env = gym.make("CarRacing-v0")
+env = gym.make('Pong-v0')
 # Current iteration
 step = 0
 # Has trained model
@@ -44,23 +67,24 @@ params = {
     'history_size': 4,  # k
     'train_freq': 4,
     'target_update_freq': 10000,  # C: Target nerwork update frequency
-    'num_states': len(env.action_space.high),
-    'min_steps_train': 50000,
-    'render': False,
+    'num_actions': env.action_space.n,
+    'min_steps_train': 50000
 }
 # Initialize Logger
 log = Logger(log_dir=FLAGS.log_dir)
 # Initialize replay memory D to capacity N
-D = ReplayMemory(N=params['memory_size'], n_states=params["num_states"],
-                 load_existing=False, data_dir=FLAGS.in_dir)
+D = ReplayMemory(N=params['memory_size'],
+                 load_existing=True, data_dir=FLAGS.in_dir)
 skip_fill_memory = D.count > 0
 # Initialize action-value function Q with random weights
-Q = DeepQNetwork(params['num_states'])
+Q = DeepQNetwork(params['num_actions'])
 log.network(Q)
 # Initialize target action-value function Q^
 Q_ = copy_network(Q)
 # Init network optimizer
-optimizer = optim.Adagrad(Q.parameters())
+optimizer = optim.RMSprop(
+    Q.parameters(), lr=0.00025, alpha=0.95, eps=.01  # ,momentum=0.95,
+)
 # Initialize sequence s1 = {x1} and preprocessed sequence phi = phi(s1)
 H = History.initial(env)
 
@@ -72,11 +96,10 @@ for ep in range(params['num_episodes']):
     if (ep % FLAGS.save_model_freq) == 0:
         save_network(Q, ep, out_dir=FLAGS.data_dir)
 
-    _start = perf_counter()
-    for k in range(params['max_episode_length']):
+    for _ in range(params['max_episode_length']):
         # env.render(mode='human')
-        #  if step % 100 == 0:
-           #  print('Memory usage: {} (kb)'.format(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
+        # if step % 100 == 0:
+        #     print 'Memory usage: %s (kb)' % resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 
         step += 1
         # Select action a_t for current state s_t
@@ -84,9 +107,8 @@ for ep in range(params['num_episodes']):
         if step % FLAGS.log_freq == 0:
             log.epsilon(epsilon, step)
         # Execute action a_t in emulator and observe reward r_t and image x_(t+1)
-        image, reward, done, _ = env.step(action.tolist())
-        if params["render"]:
-            env.render()
+        image, reward, done, _ = env.step(action)
+        env.render()
 
         # Clip reward to range [-1, 1]
         reward = max(-1.0, min(reward, 1.0))
@@ -130,7 +152,5 @@ for ep in range(params['num_episodes']):
             H = History.initial(env)
             log.reset_episode()
             break
-    # No rendering: ~0.012
-    # Rendering: ~0.027
-    step_avg_time = (perf_counter() - _start) / (k + 1)
-    print(f"Time per step: {step_avg_time}")
+
+writer.close()

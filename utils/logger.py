@@ -1,4 +1,4 @@
-from tensorboardX import SummaryWriter
+#  from tensorboardX import SummaryWriter
 
 
 class Logger:
@@ -6,7 +6,7 @@ class Logger:
     def __init__(self, log_dir):
         self.env_name = 'Pong-v0'
         # TensorBoard
-        self.writer = SummaryWriter(log_dir=log_dir)
+        #  self.writer = SummaryWriter(log_dir=log_dir)
         # Episode Values
         self.ep = 0
         self.ep_rewards = []
@@ -104,8 +104,8 @@ class Logger:
         # Add Env.Name to name
         name = '{}/{}'.format(self.env_name, name)
         # Log in Tensorboard
-        if type == 'scalar':
-            self.writer.add_scalar(name, value, step)
-            self.writer.scalar_dict = {}
-        elif type == 'histogram':
-            self.writer.add_histogram(name, value, step)
+        #  if type == 'scalar':
+            #  self.writer.add_scalar(name, value, step)
+            #  self.writer.scalar_dict = {}
+        #  elif type == 'histogram':
+            #  self.writer.add_histogram(name, value, step)

@@ -9,17 +9,24 @@ from torch.autograd import Variable
 
 class ReplayMemory():
 
-    def __init__(self, N, load_existing, data_dir, image_shape=(4, 84, 84)):
+    def __init__(self, N, n_states, load_existing, data_dir, image_shape=(4, 84, 84)):
         # Path where replay memory can be stored/loaded from
         self.data_dir = '{}/replay'.format(data_dir)
+
         # Max memory size
         self.memory_size = N
+
         # Shape of images
         self.image_shape = image_shape
+
         # Next position in arrays to be used
         self.index = 0
+
         # Number of stored elements
         self.count = 0
+
+        # The dimension of each action.
+        self.n_states = n_states
 
         # One np array for each tuple element
         self._init_arrays(self.memory_size)
@@ -33,7 +40,7 @@ class ReplayMemory():
         Inits memory arrays as empty numpy arrays with expected shapes
         '''
         self.phi_t = np.empty((N, ) + self.image_shape, dtype=np.float16)
-        self.action = np.empty(N, dtype=np.uint8)
+        self.action = np.empty((N, self.n_states), dtype=np.float16)
         self.reward = np.empty(N, dtype=np.integer)
         self.phi_t_plus1 = np.empty((N, ) + self.image_shape, dtype=np.float16)
         self.terminates = np.empty(N, dtype=np.bool)
